@@ -46,8 +46,14 @@
 
     <main class="app">
       <div class="headline">
-        <h1 id="headline-count">Your reminders</h1>
-        <p id="headline-sub" class="sub"></p>
+        <div>
+          <h1 id="headline-count">Your reminders</h1>
+          <p id="headline-sub" class="sub"></p>
+        </div>
+        <div class="viewswitch" role="tablist" aria-label="View">
+          <button type="button" class="view" role="tab" data-view="list" aria-selected="true">List</button>
+          <button type="button" class="view" role="tab" data-view="calendar" aria-selected="false">Calendar</button>
+        </div>
       </div>
 
       <form id="reminder-form" class="composer">
@@ -80,6 +86,27 @@
         <p class="empty-title">Nothing here yet</p>
         <p class="empty-sub">Add your first reminder above.</p>
       </div>
+
+      <section id="calendar-view" class="hidden">
+        <div class="cal-head">
+          <button type="button" id="cal-prev" class="cal-nav" aria-label="Previous month">&#8249;</button>
+          <h2 id="cal-title" class="cal-title"></h2>
+          <button type="button" id="cal-next" class="cal-nav" aria-label="Next month">&#8250;</button>
+          <button type="button" id="cal-today" class="btn-text cal-today">Today</button>
+        </div>
+
+        <div class="cal-weekdays" aria-hidden="true">
+          <span>Mon</span><span>Tue</span><span>Wed</span>
+          <span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        </div>
+
+        <div id="cal-grid" class="cal-grid"></div>
+
+        <div id="cal-undated" class="cal-undated hidden">
+          <h3 class="cal-undated-title">No due date</h3>
+          <ul id="cal-undated-list" class="list"></ul>
+        </div>
+      </section>
     </main>
   </div>
 
