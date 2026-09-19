@@ -38,16 +38,19 @@ Check it worked: **Table Editor** should show `reminders`, and **Authentication
 
 ### 3. Add your project URL and key
 
-In the dashboard, go to **Project Settings → API** and copy:
+Already done for this project's own Supabase instance — `app.js` has real
+values in it. If you fork this or point it at a different project, go to
+**Project Settings → API** in the dashboard and copy:
 
 - **Project URL** — looks like `https://abcdefgh.supabase.co`
-- **anon public** key — a long string starting `eyJ...`
+- **publishable** key — starts `sb_publishable_...` (older projects call this
+  the "anon public" key and it starts `eyJ...`; both work the same way)
 
 Paste both into the top of `app.js`:
 
 ```js
 const SUPABASE_URL = "https://abcdefgh.supabase.co";
-const SUPABASE_ANON_KEY = "eyJ...";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_...";
 ```
 
 ### 4. Run it locally
@@ -76,7 +79,7 @@ Site URL**. Confirmation and password-reset links point there.
 
 ## About that key in the source code
 
-The anon public key is committed to this repo and served to every visitor. That
+The publishable key is committed to this repo and served to every visitor. That
 is how Supabase is designed to work, not an oversight — it identifies your
 project, it isn't a password. Anyone viewing source can read it, and that's
 fine.
@@ -84,19 +87,22 @@ fine.
 What keeps your data private is Row Level Security. With RLS enabled, every
 query Postgres receives is rewritten to add `where user_id = auth.uid()`, where
 `auth.uid()` comes from the signed login token, not from anything the browser
-claims. Someone holding the anon key but no valid login sees zero rows. Someone
-logged in as themselves sees only their own rows, even if they craft requests by
-hand with `curl`. That is why the app's queries in `app.js` never filter by user
-themselves — the database does it, and the database can't be talked out of it.
+claims. Someone holding the publishable key but no valid login sees zero rows.
+Someone logged in as themselves sees only their own rows, even if they craft
+requests by hand with `curl`. That is why the app's queries in `app.js` never
+filter by user themselves — the database does it, and the database can't be
+talked out of it.
 
 Two keys you must **not** put in this file:
 
-- The **service_role** key (same API settings page). It bypasses RLS entirely.
-  It belongs only on a server you control.
+- The **secret** key (same API settings page; older projects call it
+  **service_role**). It bypasses RLS entirely and belongs only on a server you
+  control.
 - Your database password.
 
 And one rule that follows from all this: if you ever add a new table, enable RLS
-on it as well. A table without RLS is readable by anyone with the anon key.
+on it as well. A table without RLS is readable by anyone holding the
+publishable key.
 
 ## What's not here (yet)
 
