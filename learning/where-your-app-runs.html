@@ -318,6 +318,35 @@
     padding: 1px 5px;
   }
 
+  /* sequence diagram */
+  .lifeline { stroke: var(--line-strong); stroke-width: 1.25; stroke-dasharray: 2 6; }
+  .seq-req { stroke: var(--client); stroke-width: 1.75; fill: none; }
+  .seq-res { stroke: var(--server); stroke-width: 1.5; fill: none; stroke-dasharray: 6 4; }
+  .seq-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    paint-order: stroke;
+    stroke: var(--surface);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+  }
+  .seq-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    border-top: 1px solid var(--line);
+    background: var(--surface-2);
+    margin: 0;
+    padding: 12px 18px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .seq-key span { display: inline-flex; align-items: center; gap: 8px; }
+  .seq-key i { width: 26px; height: 0; border-top-width: 2px; display: inline-block; }
+  .seq-key .k-req { border-top-style: solid; border-top-color: var(--client); }
+  .seq-key .k-res { border-top-style: dashed; border-top-color: var(--server); }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
   }
@@ -380,7 +409,8 @@
   <section>
     <div class="section-head">
       <h2>Your app, as it actually is</h2>
-      <p>One click on a bookmark. Six requests, five of which you never asked for. Hover a step to trace it.</p>
+      <p>Which machines exist, and who talks to whom. Every arrow points both ways because every
+        request has an answer coming back — nothing here is one-way. Hover a step to trace it.</p>
     </div>
 
     <figure class="figure" style="margin:0">
@@ -432,27 +462,27 @@
           <text class="box-name"  x="666" y="260" fill="var(--ink)">Postgres database</text>
 
           <!-- server to storage -->
-          <path class="flow" d="M570,61 H650" marker-end="url(#ah)"></path>
-          <path class="flow" d="M570,249 H650" marker-end="url(#ah)"></path>
+          <path class="flow" d="M570,61 H650" marker-end="url(#ah)" marker-start="url(#ah)"></path>
+          <path class="flow" d="M570,249 H650" marker-end="url(#ah)" marker-start="url(#ah)"></path>
 
           <!-- request flows -->
           <g class="badge-g" data-step="1">
-            <path class="flow" id="f1" d="M216,128 L300,61" marker-end="url(#ah)"></path>
+            <path class="flow" id="f1" d="M216,128 L300,61" marker-end="url(#ah)" marker-start="url(#ah)"></path>
             <circle class="badge-c" cx="258" cy="94" r="12"></circle>
             <text class="badge-t" x="258" y="98" text-anchor="middle">1</text>
           </g>
           <g class="badge-g" data-step="2">
-            <path class="flow" id="f2" d="M216,146 L300,139" marker-end="url(#ah)"></path>
+            <path class="flow" id="f2" d="M216,146 L300,139" marker-end="url(#ah)" marker-start="url(#ah)"></path>
             <circle class="badge-c" cx="258" cy="142" r="12"></circle>
             <text class="badge-t" x="258" y="146" text-anchor="middle">2</text>
           </g>
           <g class="badge-g" data-step="3">
-            <path class="flow" id="f3" d="M216,182 L300,226" marker-end="url(#ah)"></path>
+            <path class="flow" id="f3" d="M216,182 L300,226" marker-end="url(#ah)" marker-start="url(#ah)"></path>
             <circle class="badge-c" cx="258" cy="204" r="12"></circle>
             <text class="badge-t" x="258" y="208" text-anchor="middle">3</text>
           </g>
           <g class="badge-g" data-step="4">
-            <path class="flow" id="f4" d="M216,206 L300,266" marker-end="url(#ah)"></path>
+            <path class="flow" id="f4" d="M216,206 L300,266" marker-end="url(#ah)" marker-start="url(#ah)"></path>
             <circle class="badge-c" cx="269" cy="251" r="12"></circle>
             <text class="badge-t" x="269" y="255" text-anchor="middle">4</text>
           </g>
@@ -465,6 +495,98 @@
         <li tabindex="0" data-step="4"><span class="n">4</span><span><code>app.js:219</code> asks for the reminders. Supabase checks your RLS rules against the login token and returns only your rows.</span></li>
       </ul>
     </figure>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>The same load, in order</h2>
+      <p>The diagram above shows which machines exist. This one shows the conversation — time running
+        downwards, one round trip per pair of lines. This shape is called a sequence diagram, and it's
+        what people usually reach for to show a request and its answer.</p>
+    </div>
+
+    <figure class="figure" style="margin:0">
+      <div class="figure-scroll">
+        <svg viewBox="0 0 900 470" role="img" aria-label="A sequence diagram: Chrome requests index.html, style.css and app.js from GitHub Pages, the Supabase library from jsDelivr, then a session check and the reminders from Supabase, each with a response returning.">
+          <defs>
+            <marker id="ah-req" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--client)"></path>
+            </marker>
+            <marker id="ah-res" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--server)"></path>
+            </marker>
+            <marker id="ah-time" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--muted)"></path>
+            </marker>
+          </defs>
+
+          <!-- time axis -->
+          <path d="M18,64 V440" stroke="var(--line-strong)" stroke-width="1.25" fill="none" marker-end="url(#ah-time)"></path>
+          <text class="col-label" x="14" y="56" fill="var(--muted)">TIME</text>
+
+          <!-- lifelines -->
+          <rect x="40" y="16" width="150" height="34" rx="3" fill="var(--client-soft)" stroke="var(--client)" stroke-width="1.5"></rect>
+          <text class="box-name" x="115" y="38" fill="var(--ink)" text-anchor="middle" font-size="13">Chrome</text>
+          <path class="lifeline" d="M115,50 V444"></path>
+
+          <rect x="300" y="16" width="150" height="34" rx="3" fill="var(--server-soft)" stroke="var(--server)" stroke-width="1.5"></rect>
+          <text class="box-name" x="375" y="38" fill="var(--ink)" text-anchor="middle" font-size="13">GitHub Pages</text>
+          <path class="lifeline" d="M375,50 V444"></path>
+
+          <rect x="515" y="16" width="150" height="34" rx="3" fill="var(--server-soft)" stroke="var(--server)" stroke-width="1.5"></rect>
+          <text class="box-name" x="590" y="38" fill="var(--ink)" text-anchor="middle" font-size="13">jsDelivr CDN</text>
+          <path class="lifeline" d="M590,50 V444"></path>
+
+          <rect x="725" y="16" width="150" height="34" rx="3" fill="var(--server-soft)" stroke="var(--server)" stroke-width="1.5"></rect>
+          <text class="box-name" x="800" y="38" fill="var(--ink)" text-anchor="middle" font-size="13">Supabase</text>
+          <path class="lifeline" d="M800,50 V444"></path>
+
+          <!-- 1 -->
+          <text class="seq-label" x="245" y="86"  fill="var(--client)" text-anchor="middle">GET index.html</text>
+          <path class="seq-req" d="M115,92 H375" marker-end="url(#ah-req)"></path>
+          <text class="seq-label" x="245" y="110" fill="var(--server)" text-anchor="middle">200 · the html</text>
+          <path class="seq-res" d="M375,116 H115" marker-end="url(#ah-res)"></path>
+
+          <!-- 2 -->
+          <text class="seq-label" x="245" y="150" fill="var(--client)" text-anchor="middle">GET style.css, app.js</text>
+          <path class="seq-req" d="M115,156 H375" marker-end="url(#ah-req)"></path>
+          <text class="seq-label" x="245" y="174" fill="var(--server)" text-anchor="middle">200 · the files</text>
+          <path class="seq-res" d="M375,180 H115" marker-end="url(#ah-res)"></path>
+
+          <!-- 3 -->
+          <text class="seq-label" x="352" y="214" fill="var(--client)" text-anchor="middle">GET the Supabase library</text>
+          <path class="seq-req" d="M115,220 H590" marker-end="url(#ah-req)"></path>
+          <text class="seq-label" x="352" y="238" fill="var(--server)" text-anchor="middle">200 · the library</text>
+          <path class="seq-res" d="M590,244 H115" marker-end="url(#ah-res)"></path>
+
+          <!-- note -->
+          <rect x="40" y="268" width="230" height="30" rx="3" fill="var(--surface-2)" stroke="var(--line-strong)" stroke-width="1.25" stroke-dasharray="4 3"></rect>
+          <text class="box-note" x="155" y="288" fill="var(--ink-2)" text-anchor="middle">now app.js starts running</text>
+
+          <!-- 4 -->
+          <text class="seq-label" x="457" y="328" fill="var(--client)" text-anchor="middle">is this person still logged in?</text>
+          <path class="seq-req" d="M115,334 H800" marker-end="url(#ah-req)"></path>
+          <text class="seq-label" x="457" y="352" fill="var(--server)" text-anchor="middle">200 · yes, here's their token</text>
+          <path class="seq-res" d="M800,358 H115" marker-end="url(#ah-res)"></path>
+
+          <!-- 5 -->
+          <text class="seq-label" x="457" y="392" fill="var(--client)" text-anchor="middle">select * from reminders</text>
+          <path class="seq-req" d="M115,398 H800" marker-end="url(#ah-req)"></path>
+          <text class="seq-label" x="457" y="416" fill="var(--server)" text-anchor="middle">200 · only your rows, per the RLS policy</text>
+          <path class="seq-res" d="M800,422 H115" marker-end="url(#ah-res)"></path>
+        </svg>
+      </div>
+      <p class="seq-key">
+        <span><i class="k-req"></i> request going out</span>
+        <span><i class="k-res"></i> answer coming back</span>
+        <span>every pair is one round trip</span>
+      </p>
+    </figure>
+
+    <p class="note" style="margin-top:22px">
+      Note where the database isn't. Chrome never speaks to it — it only ever speaks to Supabase, which
+      speaks to the database on its behalf. That's the arrangement an API layer makes explicit.
+    </p>
   </section>
 
   <section>
@@ -584,6 +706,7 @@
       if (path) {
         path.classList.toggle('lit', on);
         path.setAttribute('marker-end', on ? 'url(#ah-lit)' : 'url(#ah)');
+        path.setAttribute('marker-start', on ? 'url(#ah-lit)' : 'url(#ah)');
       }
     }
 
