@@ -1,0 +1,263 @@
+// app.js — all of the app's logic lives here.
+//
+// Roughly in order:
+//   1. Supabase client setup
+//   2. Element references + small helpers
+//   3. Auth (sign up, log in, log out, session on reload)
+//   4. Reminder CRUD (create, read, update, delete)
+//   5. Rendering the list
+
+// ---------------------------------------------------------------------------
+// 1. Supabase client
+// ---------------------------------------------------------------------------
+
+// Replace these two values with your own project's, from the Supabase
+// dashboard: Project Settings -> API.
+//
+// Yes, this key ends up publicly visible in the browser. That is expected:
+// the "anon public" key is designed to be shipped to clients. It only grants
+// the permissions your Row Level Security policies allow, and our policies in
+// schema.sql restrict every row to its owner. See the README for more.
+const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
+
+// The CDN script in index.html gives us a global called `supabase`. We call
+// its createClient() and keep the result in `db`, so the two names don't clash.
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ---------------------------------------------------------------------------
+// 2. Elements and helpers
+// ---------------------------------------------------------------------------
+
+const authView = document.getElementById("auth-view");
+const appView = document.getElementById("app-view");
+const authForm = document.getElementById("auth-form");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const signupBtn = document.getElementById("signup-btn");
+const logoutBtn = document.getElementById("logout-btn");
+const userEmail = document.getElementById("user-email");
+const authMessage = document.getElementById("auth-message");
+
+const reminderForm = document.getElementById("reminder-form");
+const reminderText = document.getElementById("reminder-text");
+const reminderDue = document.getElementById("reminder-due");
+const reminderList = document.getElementById("reminder-list");
+const emptyState = document.getElementById("empty-state");
+const appMessage = document.getElementById("app-message");
+
+// Show a message under a form. `isError` picks the colour.
+function showMessage(element, text, isError = true) {
+  element.textContent = text;
+  element.classList.toggle("success", !isError);
+}
+
+function clearMessages() {
+  showMessage(authMessage, "");
+  showMessage(appMessage, "");
+}
+
+// Format "2026-03-04" as "4 Mar 2026". Dates come back from Postgres as plain
+// YYYY-MM-DD strings, so we split them rather than using new Date(), which
+// would interpret them as UTC midnight and can shift the day in some zones.
+function formatDueDate(isoDate) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${day} ${monthNames[month - 1]} ${year}`;
+}
+
+// ---------------------------------------------------------------------------
+// 3. Auth
+// ---------------------------------------------------------------------------
+
+// onAuthStateChange fires once when the page loads (with the stored session,
+// if any) and again on every login/logout. Doing our view switching here means
+// session persistence across reloads comes for free — the Supabase client
+// keeps the session in localStorage and restores it for us.
+db.auth.onAuthStateChange((_event, session) => {
+  if (session) {
+    showAppView(session.user);
+  } else {
+    showAuthView();
+  }
+});
+
+function showAppView(user) {
+  authView.classList.add("hidden");
+  appView.classList.remove("hidden");
+  userEmail.textContent = user.email;
+  clearMessages();
+  loadReminders();
+}
+
+function showAuthView() {
+  appView.classList.add("hidden");
+  authView.classList.remove("hidden");
+  reminderList.replaceChildren();
+  emptyState.classList.add("hidden");
+}
+
+// Log in — the form's normal submit action.
+authForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  clearMessages();
+
+  const { error } = await db.auth.signInWithPassword({
+    email: emailInput.value,
+    password: passwordInput.value,
+  });
+
+  if (error) {
+    showMessage(authMessage, error.message);
+    return;
+  }
+  // No redraw needed: onAuthStateChange above handles the view switch.
+  authForm.reset();
+});
+
+// Sign up — same fields, different button.
+signupBtn.addEventListener("click", async () => {
+  clearMessages();
+
+  if (!authForm.reportValidity()) return;
+
+  const { data, error } = await db.auth.signUp({
+    email: emailInput.value,
+    password: passwordInput.value,
+  });
+
+  if (error) {
+    showMessage(authMessage, error.message);
+    return;
+  }
+
+  // If email confirmation is on (the Supabase default), signUp returns no
+  // session and the user must click the link in their inbox first.
+  if (!data.session) {
+    showMessage(authMessage, "Check your email to confirm your account, then log in.", false);
+  }
+  authForm.reset();
+});
+
+logoutBtn.addEventListener("click", async () => {
+  await db.auth.signOut();
+});
+
+// ---------------------------------------------------------------------------
+// 4. Reminder CRUD
+// ---------------------------------------------------------------------------
+//
+// Note what these queries do NOT do: filter by user. They don't have to. The
+// RLS policies in schema.sql make Postgres itself restrict every row to
+// auth.uid(), so a "select all reminders" query returns only your own.
+
+async function loadReminders() {
+  const { data, error } = await db
+    .from("reminders")
+    .select("*")
+    // Sort by due date, with undated reminders at the bottom, then newest
+    // first within the same date.
+    .order("due_date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    showMessage(appMessage, `Could not load reminders: ${error.message}`);
+    return;
+  }
+
+  renderReminders(data);
+}
+
+reminderForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  clearMessages();
+
+  const { error } = await db.from("reminders").insert({
+    text: reminderText.value.trim(),
+    // An empty date input gives "", but the column wants a date or null.
+    due_date: reminderDue.value || null,
+    // user_id is filled in by the column's default (auth.uid()) — see
+    // schema.sql. The INSERT policy would reject any other value anyway.
+  });
+
+  if (error) {
+    showMessage(appMessage, `Could not add reminder: ${error.message}`);
+    return;
+  }
+
+  reminderForm.reset();
+  loadReminders();
+});
+
+async function toggleComplete(id, isComplete) {
+  const { error } = await db
+    .from("reminders")
+    .update({ is_complete: isComplete })
+    .eq("id", id);
+
+  if (error) {
+    showMessage(appMessage, `Could not update reminder: ${error.message}`);
+  }
+  loadReminders();
+}
+
+async function deleteReminder(id) {
+  const { error } = await db.from("reminders").delete().eq("id", id);
+
+  if (error) {
+    showMessage(appMessage, `Could not delete reminder: ${error.message}`);
+  }
+  loadReminders();
+}
+
+// ---------------------------------------------------------------------------
+// 5. Rendering
+// ---------------------------------------------------------------------------
+
+function renderReminders(reminders) {
+  reminderList.replaceChildren();
+  emptyState.classList.toggle("hidden", reminders.length > 0);
+  reminderList.classList.toggle("hidden", reminders.length === 0);
+
+  for (const reminder of reminders) {
+    reminderList.append(buildReminderItem(reminder));
+  }
+}
+
+// Build one <li>. We create elements and set .textContent rather than writing
+// an HTML string — that way a reminder containing "<script>" is shown as text
+// instead of being run as markup.
+function buildReminderItem(reminder) {
+  const item = document.createElement("li");
+  if (reminder.is_complete) item.classList.add("complete");
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = reminder.is_complete;
+  checkbox.addEventListener("change", () => {
+    toggleComplete(reminder.id, checkbox.checked);
+  });
+
+  const text = document.createElement("span");
+  text.className = "reminder-text";
+  text.textContent = reminder.text;
+
+  item.append(checkbox, text);
+
+  if (reminder.due_date) {
+    const due = document.createElement("span");
+    due.className = "due";
+    due.textContent = formatDueDate(reminder.due_date);
+    item.append(due);
+  }
+
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.className = "link";
+  remove.textContent = "Delete";
+  remove.addEventListener("click", () => deleteReminder(reminder.id));
+  item.append(remove);
+
+  return item;
+}

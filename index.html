@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reminders</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <h1>Reminders</h1>
+
+    <!-- Shown when nobody is logged in -->
+    <section id="auth-view" class="card hidden">
+      <form id="auth-form">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" required />
+
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" minlength="6" required />
+
+        <div class="row">
+          <button type="submit" id="login-btn">Log in</button>
+          <button type="button" id="signup-btn" class="secondary">Sign up</button>
+        </div>
+      </form>
+      <p id="auth-message" class="message"></p>
+    </section>
+
+    <!-- Shown when logged in -->
+    <section id="app-view" class="hidden">
+      <div class="card">
+        <div class="row space-between">
+          <span id="user-email" class="muted"></span>
+          <button type="button" id="logout-btn" class="secondary">Log out</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <form id="reminder-form">
+          <label for="reminder-text">New reminder</label>
+          <input id="reminder-text" type="text" placeholder="e.g. Book dentist" required />
+
+          <label for="reminder-due">Due date (optional)</label>
+          <input id="reminder-due" type="date" />
+
+          <button type="submit">Add reminder</button>
+        </form>
+        <p id="app-message" class="message"></p>
+      </div>
+
+      <ul id="reminder-list" class="card list"></ul>
+      <p id="empty-state" class="muted hidden">No reminders yet. Add one above.</p>
+    </section>
+  </main>
+
+  <!-- Supabase JS client, loaded from their CDN. Exposes a global `supabase` object. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
