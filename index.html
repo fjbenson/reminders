@@ -19,12 +19,13 @@
         <label for="password">Password</label>
         <input id="password" type="password" autocomplete="current-password" minlength="6" required />
 
-        <div class="row">
-          <button type="submit" id="login-btn">Log in</button>
-          <button type="button" id="signup-btn" class="secondary">Sign up</button>
-        </div>
+        <button type="submit" id="submit-btn">Log in</button>
       </form>
       <p id="auth-message" class="message"></p>
+      <p class="muted switch">
+        <span id="switch-prompt">Need an account?</span>
+        <button type="button" id="switch-btn" class="link-plain">Sign up</button>
+      </p>
     </section>
 
     <!-- Shown when logged in -->
