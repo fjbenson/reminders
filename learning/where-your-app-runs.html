@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+<title>Where Your App Runs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+  :root {
+    --ground: #f2f5f3;
+    --surface: #ffffff;
+    --surface-2: #e9eeeb;
+    --ink: #15221f;
+    --ink-2: #41534e;
+    --muted: #6d807a;
+    --line: #ccd7d2;
+    --line-strong: #9fb0aa;
+
+    --client: #2f5fa8;
+    --client-soft: #e4ecf8;
+    --server: #0d7a66;
+    --server-soft: #dcefea;
+    --store: #8a6a34;
+    --store-soft: #f3ead8;
+
+    --shadow: 0 1px 2px rgba(21, 34, 31, .06), 0 6px 18px rgba(21, 34, 31, .05);
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0e1514;
+      --surface: #16201e;
+      --surface-2: #1d2926;
+      --ink: #e6ede9;
+      --ink-2: #b4c4be;
+      --muted: #869993;
+      --line: #2c3a36;
+      --line-strong: #4a5c57;
+
+      --client: #7aa6e8;
+      --client-soft: #1a2739;
+      --server: #4cc0a5;
+      --server-soft: #122b26;
+      --store: #d2ab6b;
+      --store-soft: #2a2317;
+
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #0e1514;
+    --surface: #16201e;
+    --surface-2: #1d2926;
+    --ink: #e6ede9;
+    --ink-2: #b4c4be;
+    --muted: #869993;
+    --line: #2c3a36;
+    --line-strong: #4a5c57;
+
+    --client: #7aa6e8;
+    --client-soft: #1a2739;
+    --server: #4cc0a5;
+    --server-soft: #122b26;
+    --store: #d2ab6b;
+    --store-soft: #2a2317;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px rgba(0, 0, 0, .3);
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 48px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 52px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 10px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(30px, 6vw, 44px);
+    line-height: 1.12;
+    letter-spacing: -.01em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(20px, 3.6vw, 25px);
+    line-height: 1.25;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+
+  .lede {
+    font-size: 17px;
+    color: var(--ink-2);
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  section > p {
+    color: var(--ink-2);
+    max-width: 65ch;
+  }
+
+  .section-head { margin-bottom: 22px; }
+  .section-head p { margin: 0; color: var(--muted); max-width: 62ch; }
+
+  /* --- the one idea --- */
+  .thesis {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--server);
+    border-radius: 3px;
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+  }
+  .thesis p { margin: 0; max-width: 60ch; color: var(--ink-2); }
+  .thesis strong {
+    display: block;
+    font-family: var(--serif);
+    font-size: clamp(19px, 3.4vw, 23px);
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  /* --- vocabulary --- */
+  .terms {
+    display: grid;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .term {
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 20px;
+    padding: 16px 20px;
+    align-items: start;
+  }
+  .term dt {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 13px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding-top: 2px;
+  }
+  .term dd { margin: 0; color: var(--ink-2); font-size: 15px; }
+  .term dd .yours {
+    display: block;
+    margin-top: 5px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .role-client dt { color: var(--client); }
+  .role-server dt { color: var(--server); }
+  .role-store  dt { color: var(--store); }
+  .role-none   dt { color: var(--muted); }
+
+  @media (max-width: 560px) {
+    .term { grid-template-columns: 1fr; gap: 6px; }
+  }
+
+  /* --- diagrams --- */
+  .figure {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .figure-scroll { overflow-x: auto; padding: 18px; }
+  .figure svg { display: block; min-width: 560px; max-width: 100%; height: auto; }
+
+  .legend {
+    border-top: 1px solid var(--line);
+    background: var(--surface-2);
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    display: grid;
+    gap: 2px;
+  }
+  .legend li {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 12px;
+    align-items: baseline;
+    padding: 8px 12px;
+    border-radius: 2px;
+    font-size: 14.5px;
+    color: var(--ink-2);
+    cursor: default;
+    transition: background .12s ease;
+  }
+  .legend li:hover, .legend li:focus-visible {
+    background: var(--surface);
+    outline: none;
+  }
+  .legend li:focus-visible { box-shadow: inset 0 0 0 2px var(--client); }
+  .legend .n {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--surface);
+    background: var(--ink-2);
+    border-radius: 50%;
+    width: 21px;
+    height: 21px;
+    display: grid;
+    place-items: center;
+    align-self: start;
+    position: relative;
+    top: 2px;
+  }
+  .legend code {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 1px 5px;
+  }
+  .legend li:hover code { background: var(--ground); }
+
+  /* svg pieces */
+  .box-label { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; }
+  .box-name  { font-family: var(--sans); font-size: 15px; font-weight: 600; }
+  .box-note  { font-family: var(--sans); font-size: 12.5px; }
+  .col-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; }
+  .flow { stroke: var(--line-strong); stroke-width: 1.5; fill: none; transition: stroke .15s ease, stroke-width .15s ease; }
+  .flow.lit { stroke: var(--client); stroke-width: 2.75; }
+  .badge-c { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.5; transition: stroke .15s ease, fill .15s ease; }
+  .lit .badge-c, .badge-g.lit .badge-c { stroke: var(--client); }
+  .badge-t { font-family: var(--mono); font-size: 11px; font-weight: 500; fill: var(--ink-2); }
+  .badge-g.lit .badge-t { fill: var(--client); }
+
+  /* --- runs-where table --- */
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 620px) { .split { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 18px 20px;
+  }
+  .panel h3 {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: .04em;
+    margin: 0 0 4px;
+    color: var(--ink);
+  }
+  .panel .who { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; font-family: var(--mono); }
+  .panel ul { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 14.5px; }
+  .panel li { margin-bottom: 5px; }
+  .panel li::marker { color: var(--line-strong); }
+
+  .note {
+    font-size: 14.5px;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+    max-width: 65ch;
+  }
+  .note code, p code {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 1px 5px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">reminders · architecture</p>
+    <h1>Where your app runs</h1>
+    <p class="lede">Five words that get used loosely, pinned to the machines in your own project — plus the one idea the rest hangs off.</p>
+  </header>
+
+  <div class="thesis">
+    <p>
+      <strong>A server is a running program.</strong>
+      Not a place, not a language, not a machine. <code>server.js</code> is a recipe sitting on a disk; the server is what
+      exists once something runs it. Stop the program and the server stops existing, even though the file is untouched.
+      That is why Ctrl-C broke the page.
+    </p>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2>The five words</h2>
+      <p>Colour marks the role, and it's used consistently in every diagram below.</p>
+    </div>
+    <dl class="terms">
+      <div class="term role-store">
+        <dt>Storing</dt>
+        <dd>Keeping code or data somewhere safe. Nothing is running.
+          <span class="yours">GitHub holds your code · Postgres holds your reminders</span></dd>
+      </div>
+      <div class="term role-none">
+        <dt>Hosting</dt>
+        <dd>Someone provides an always-on machine so your thing stays available to other people.
+          <span class="yours">GitHub Pages hosts files · Render or Fly would host a program</span></dd>
+      </div>
+      <div class="term role-none">
+        <dt>Serving</dt>
+        <dd>The act of handing something over when asked. Hosting is the arrangement; serving is what happens each time.
+          <span class="yours">what GitHub Pages does on every page load</span></dd>
+      </div>
+      <div class="term role-client">
+        <dt>Client</dt>
+        <dd>The thing that asks. It runs the app, but only for the person sitting in front of it.
+          <span class="yours">Chrome, running index.html + style.css + app.js</span></dd>
+      </div>
+      <div class="term role-server">
+        <dt>Server</dt>
+        <dd>A running program that waits for requests and answers them.
+          <span class="yours">GitHub Pages · the CDN · Supabase · your tiny one</span></dd>
+      </div>
+    </dl>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Your app, as it actually is</h2>
+      <p>One click on a bookmark. Six requests, five of which you never asked for. Hover a step to trace it.</p>
+    </div>
+
+    <figure class="figure" style="margin:0">
+      <div class="figure-scroll">
+        <svg viewBox="0 0 900 330" role="img" aria-label="Chrome on your laptop sends requests to GitHub Pages, a CDN and Supabase; GitHub Pages reads from GitHub storage and Supabase reads from its database.">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--line-strong)"></path>
+            </marker>
+            <marker id="ah-lit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--client)"></path>
+            </marker>
+          </defs>
+
+          <text class="col-label" x="16" y="16" fill="var(--muted)">YOUR LAPTOP</text>
+          <text class="col-label" x="300" y="16" fill="var(--muted)">SERVERS — ELSEWHERE</text>
+          <text class="col-label" x="650" y="16" fill="var(--muted)">STORAGE</text>
+
+          <!-- client -->
+          <rect x="16" y="92" width="200" height="150" rx="3" fill="var(--client-soft)" stroke="var(--client)" stroke-width="1.5"></rect>
+          <text class="box-label" x="34" y="118" fill="var(--client)">CLIENT</text>
+          <text class="box-name"  x="34" y="142" fill="var(--ink)">Chrome</text>
+          <text class="box-note"  x="34" y="168" fill="var(--ink-2)">runs index.html,</text>
+          <text class="box-note"  x="34" y="186" fill="var(--ink-2)">style.css, app.js</text>
+          <text class="box-note"  x="34" y="214" fill="var(--muted)">a copy, just for you</text>
+
+          <!-- servers -->
+          <rect x="300" y="28" width="270" height="66" rx="3" fill="var(--server-soft)" stroke="var(--server)" stroke-width="1.5"></rect>
+          <text class="box-label" x="316" y="50" fill="var(--server)">SERVER · SERVING FILES</text>
+          <text class="box-name"  x="316" y="74" fill="var(--ink)">GitHub Pages</text>
+
+          <rect x="300" y="110" width="270" height="58" rx="3" fill="var(--server-soft)" stroke="var(--server)" stroke-width="1.5"></rect>
+          <text class="box-label" x="316" y="132" fill="var(--server)">SERVER · SERVING FILES</text>
+          <text class="box-name"  x="316" y="155" fill="var(--ink)">jsDelivr CDN</text>
+
+          <rect x="300" y="200" width="270" height="96" rx="3" fill="var(--server-soft)" stroke="var(--server)" stroke-width="1.5"></rect>
+          <text class="box-label" x="316" y="222" fill="var(--server)">SERVER · DECIDING</text>
+          <text class="box-name"  x="316" y="246" fill="var(--ink)">Supabase</text>
+          <text class="box-note"  x="316" y="270" fill="var(--ink-2)">checks your password,</text>
+          <text class="box-note"  x="316" y="286" fill="var(--ink-2)">enforces your RLS rules</text>
+
+          <!-- storage -->
+          <rect x="650" y="34" width="234" height="54" rx="3" fill="var(--store-soft)" stroke="var(--store)" stroke-width="1.5"></rect>
+          <text class="box-label" x="666" y="56" fill="var(--store)">STORES CODE</text>
+          <text class="box-name"  x="666" y="78" fill="var(--ink)">GitHub</text>
+
+          <rect x="650" y="216" width="234" height="66" rx="3" fill="var(--store-soft)" stroke="var(--store)" stroke-width="1.5"></rect>
+          <text class="box-label" x="666" y="238" fill="var(--store)">STORES DATA</text>
+          <text class="box-name"  x="666" y="260" fill="var(--ink)">Postgres database</text>
+
+          <!-- server to storage -->
+          <path class="flow" d="M570,61 H650" marker-end="url(#ah)"></path>
+          <path class="flow" d="M570,249 H650" marker-end="url(#ah)"></path>
+
+          <!-- request flows -->
+          <g class="badge-g" data-step="1">
+            <path class="flow" id="f1" d="M216,128 L300,61" marker-end="url(#ah)"></path>
+            <circle class="badge-c" cx="258" cy="94" r="12"></circle>
+            <text class="badge-t" x="258" y="98" text-anchor="middle">1</text>
+          </g>
+          <g class="badge-g" data-step="2">
+            <path class="flow" id="f2" d="M216,146 L300,139" marker-end="url(#ah)"></path>
+            <circle class="badge-c" cx="258" cy="142" r="12"></circle>
+            <text class="badge-t" x="258" y="146" text-anchor="middle">2</text>
+          </g>
+          <g class="badge-g" data-step="3">
+            <path class="flow" id="f3" d="M216,182 L300,226" marker-end="url(#ah)"></path>
+            <circle class="badge-c" cx="258" cy="204" r="12"></circle>
+            <text class="badge-t" x="258" y="208" text-anchor="middle">3</text>
+          </g>
+          <g class="badge-g" data-step="4">
+            <path class="flow" id="f4" d="M216,206 L300,266" marker-end="url(#ah)"></path>
+            <circle class="badge-c" cx="269" cy="251" r="12"></circle>
+            <text class="badge-t" x="269" y="255" text-anchor="middle">4</text>
+          </g>
+        </svg>
+      </div>
+      <ul class="legend" id="legend">
+        <li tabindex="0" data-step="1"><span class="n">1</span><span>Chrome asks for the page and gets <code>index.html</code>, then <code>style.css</code>, then <code>app.js</code> — three separate requests. Pages reads them from your repo.</span></li>
+        <li tabindex="0" data-step="2"><span class="n">2</span><span><code>index.html</code> names the Supabase library, so Chrome fetches that too — from a CDN, not from you.</span></li>
+        <li tabindex="0" data-step="3"><span class="n">3</span><span>Now <code>app.js</code> is running. It asks Supabase: is this person still logged in?</span></li>
+        <li tabindex="0" data-step="4"><span class="n">4</span><span><code>app.js:219</code> asks for the reminders. Supabase checks your RLS rules against the login token and returns only your rows.</span></li>
+      </ul>
+    </figure>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>The toy, which connects to none of it</h2>
+      <p>What you ran in the terminal. No database, no link to your app — its two reminders are typed into the file as text.</p>
+    </div>
+    <figure class="figure" style="margin:0">
+      <div class="figure-scroll">
+        <svg viewBox="0 0 900 142" role="img" aria-label="Chrome talks to server.js running on your own Chromebook, which returns two hard-coded reminders.">
+          <text class="col-label" x="16" y="16" fill="var(--muted)">YOUR LAPTOP</text>
+          <text class="col-label" x="300" y="16" fill="var(--muted)">ALSO YOUR LAPTOP</text>
+
+          <rect x="16" y="30" width="200" height="86" rx="3" fill="var(--client-soft)" stroke="var(--client)" stroke-width="1.5"></rect>
+          <text class="box-label" x="34" y="54" fill="var(--client)">CLIENT</text>
+          <text class="box-name"  x="34" y="78" fill="var(--ink)">Chrome</text>
+          <text class="box-note"  x="34" y="100" fill="var(--muted)">localhost:3000</text>
+
+          <rect x="300" y="30" width="270" height="86" rx="3" fill="var(--server-soft)" stroke="var(--server)" stroke-width="1.5"></rect>
+          <text class="box-label" x="316" y="54" fill="var(--server)">SERVER · RUNNING NOW</text>
+          <text class="box-name"  x="316" y="78" fill="var(--ink)">node server.js</text>
+          <text class="box-note"  x="316" y="100" fill="var(--muted)">stops the moment you press Ctrl-C</text>
+
+          <rect x="650" y="40" width="234" height="66" rx="3" fill="var(--store-soft)" stroke="var(--store)" stroke-width="1.5" stroke-dasharray="4 4"></rect>
+          <text class="box-note" x="666" y="68" fill="var(--ink-2)">two reminders, typed</text>
+          <text class="box-note" x="666" y="86" fill="var(--ink-2)">straight into the file</text>
+
+          <path class="flow" d="M216,64 H300" marker-end="url(#ah)"></path>
+          <path class="flow" d="M300,88 H216" marker-end="url(#ah)"></path>
+          <path class="flow" d="M570,73 H650" marker-end="url(#ah)"></path>
+        </svg>
+      </div>
+    </figure>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>What an API layer would change</h2>
+      <p>Chrome would stop talking to Supabase altogether. Every request would go through code you wrote.</p>
+    </div>
+    <figure class="figure" style="margin:0">
+      <div class="figure-scroll">
+        <svg viewBox="0 0 900 142" role="img" aria-label="Chrome talks to your own server, hosted on Render, which talks to the database.">
+          <text class="col-label" x="16" y="16" fill="var(--muted)">YOUR LAPTOP</text>
+          <text class="col-label" x="300" y="16" fill="var(--muted)">HOSTED ON RENDER OR FLY</text>
+          <text class="col-label" x="650" y="16" fill="var(--muted)">STORAGE</text>
+
+          <rect x="16" y="30" width="200" height="86" rx="3" fill="var(--client-soft)" stroke="var(--client)" stroke-width="1.5"></rect>
+          <text class="box-label" x="34" y="54" fill="var(--client)">CLIENT</text>
+          <text class="box-name"  x="34" y="78" fill="var(--ink)">Chrome</text>
+          <text class="box-note"  x="34" y="100" fill="var(--muted)">knows nothing about the database</text>
+
+          <rect x="300" y="30" width="270" height="86" rx="3" fill="var(--server-soft)" stroke="var(--server)" stroke-width="1.5"></rect>
+          <text class="box-label" x="316" y="54" fill="var(--server)">SERVER · YOURS</text>
+          <text class="box-name"  x="316" y="78" fill="var(--ink)">your API</text>
+          <text class="box-note"  x="316" y="100" fill="var(--muted)">the only door in</text>
+
+          <rect x="650" y="40" width="234" height="66" rx="3" fill="var(--store-soft)" stroke="var(--store)" stroke-width="1.5"></rect>
+          <text class="box-label" x="666" y="62" fill="var(--store)">STORES DATA</text>
+          <text class="box-name"  x="666" y="86" fill="var(--ink)">Postgres</text>
+
+          <path class="flow" d="M216,64 H300" marker-end="url(#ah)"></path>
+          <path class="flow" d="M300,88 H216" marker-end="url(#ah)"></path>
+          <path class="flow" d="M570,73 H650" marker-end="url(#ah)"></path>
+        </svg>
+      </div>
+    </figure>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Same language, two different homes</h2>
+      <p>Both files are JavaScript. Neither would survive in the other's place.</p>
+    </div>
+    <div class="split">
+      <div class="panel">
+        <h3>app.js</h3>
+        <p class="who">run by Chrome, on every visitor's machine</p>
+        <ul>
+          <li>Can draw on screen</li>
+          <li>Cannot read files off the disk</li>
+          <li>Cannot listen on a port</li>
+          <li>Anyone can read and edit it</li>
+          <li>Runs top to bottom, then finishes</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>server.js</h3>
+        <p class="who">run by Node, on one machine you control</p>
+        <ul>
+          <li>Has no screen to draw on</li>
+          <li>Can read and write files</li>
+          <li>Can listen on a port</li>
+          <li>Nobody else can see or change it</li>
+          <li>Reaches <code>listen()</code> and stays running</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">
+      That last pair is the whole reason password checks live on a server. A rule enforced in <code>app.js</code> is a
+      rule running on the machine of the person you're enforcing it against.
+    </p>
+  </section>
+
+</div>
+
+<script>
+  (function () {
+    var legend = document.getElementById('legend');
+    if (!legend) return;
+
+    function paint(step, on) {
+      var group = document.querySelector('.badge-g[data-step="' + step + '"]');
+      if (!group) return;
+      group.classList.toggle('lit', on);
+      var path = group.querySelector('.flow');
+      if (path) {
+        path.classList.toggle('lit', on);
+        path.setAttribute('marker-end', on ? 'url(#ah-lit)' : 'url(#ah)');
+      }
+    }
+
+    legend.querySelectorAll('li[data-step]').forEach(function (row) {
+      var step = row.getAttribute('data-step');
+      ['mouseenter', 'focus'].forEach(function (e) {
+        row.addEventListener(e, function () { paint(step, true); });
+      });
+      ['mouseleave', 'blur'].forEach(function (e) {
+        row.addEventListener(e, function () { paint(step, false); });
+      });
+    });
+  })();
+</script>
+</body>
+</html>
