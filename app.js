@@ -54,6 +54,15 @@ const headlineSub = document.getElementById("headline-sub");
 const emptyTitle = emptyState.querySelector(".empty-title");
 const emptySub = emptyState.querySelector(".empty-sub");
 const tabs = Array.from(document.querySelectorAll(".tab"));
+const viewButtons = Array.from(document.querySelectorAll(".view"));
+const calendarView = document.getElementById("calendar-view");
+const calGrid = document.getElementById("cal-grid");
+const calTitle = document.getElementById("cal-title");
+const calUndated = document.getElementById("cal-undated");
+const calUndatedList = document.getElementById("cal-undated-list");
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+                     "July", "August", "September", "October", "November", "December"];
 
 // Show a message under a form. `isError` picks the colour.
 function showMessage(element, text, isError = true) {
@@ -128,6 +137,8 @@ function showAuthView() {
   emptyState.classList.add("hidden");
   allReminders = [];
   activeFilter = "todo";
+  activeView = "list";
+  calCursor = new Date();
   setAuthMode("login");
 }
 
@@ -298,10 +309,56 @@ for (const tab of tabs) {
   });
 }
 
+// Which view is showing, and which month the calendar is parked on.
+let activeView = "list"; // "list" | "calendar"
+let calCursor = new Date();
+
+for (const button of viewButtons) {
+  button.addEventListener("click", () => {
+    activeView = button.dataset.view;
+    renderReminders();
+  });
+}
+
+document.getElementById("cal-prev").addEventListener("click", () => {
+  calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1);
+  renderReminders();
+});
+
+document.getElementById("cal-next").addEventListener("click", () => {
+  calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1);
+  renderReminders();
+});
+
+document.getElementById("cal-today").addEventListener("click", () => {
+  calCursor = new Date();
+  renderReminders();
+});
+
 function renderReminders() {
   const filter = FILTERS[activeFilter];
   const visible = allReminders.filter(filter.matches);
 
+  const isCalendar = activeView === "calendar";
+  calendarView.classList.toggle("hidden", !isCalendar);
+  for (const button of viewButtons) {
+    button.setAttribute("aria-selected", String(button.dataset.view === activeView));
+  }
+
+  updateTabs();
+  updateHeadline(allReminders);
+
+  if (isCalendar) {
+    reminderList.classList.add("hidden");
+    emptyState.classList.add("hidden");
+    renderCalendar(visible);
+    return;
+  }
+
+  renderList(visible, filter);
+}
+
+function renderList(visible, filter) {
   reminderList.replaceChildren();
   for (const reminder of visible) {
     reminderList.append(buildReminderItem(reminder));
@@ -312,9 +369,99 @@ function renderReminders() {
   emptyState.classList.toggle("hidden", !isEmpty);
   emptyTitle.textContent = filter.emptyTitle;
   emptySub.textContent = filter.emptySub;
+}
 
-  updateTabs();
-  updateHeadline(allReminders);
+// --- Calendar --------------------------------------------------------------
+
+// Local YYYY-MM-DD for a Date, matching the format Postgres gives us back.
+function toIso(date) {
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function renderCalendar(reminders) {
+  calTitle.textContent = `${MONTH_NAMES[calCursor.getMonth()]} ${calCursor.getFullYear()}`;
+
+  // Bucket reminders by their due date so each cell is a cheap lookup.
+  const byDate = new Map();
+  const undated = [];
+  for (const reminder of reminders) {
+    if (!reminder.due_date) {
+      undated.push(reminder);
+      continue;
+    }
+    if (!byDate.has(reminder.due_date)) byDate.set(reminder.due_date, []);
+    byDate.get(reminder.due_date).push(reminder);
+  }
+
+  const firstOfMonth = new Date(calCursor.getFullYear(), calCursor.getMonth(), 1);
+  // getDay() treats Sunday as 0; shift so the week starts on Monday.
+  const leading = (firstOfMonth.getDay() + 6) % 7;
+  const daysInMonth = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 0).getDate();
+  const cells = Math.ceil((leading + daysInMonth) / 7) * 7;
+
+  const today = todayIso();
+  calGrid.replaceChildren();
+
+  for (let i = 0; i < cells; i++) {
+    const date = new Date(firstOfMonth);
+    date.setDate(1 - leading + i);
+    const iso = toIso(date);
+
+    const cell = document.createElement("div");
+    cell.className = "cal-day";
+    if (date.getMonth() !== calCursor.getMonth()) cell.classList.add("outside");
+    if (iso === today) cell.classList.add("is-today");
+
+    const number = document.createElement("span");
+    number.className = "cal-date";
+    number.textContent = date.getDate();
+    cell.append(number);
+
+    const chips = document.createElement("div");
+    chips.className = "cal-chips";
+    const dayReminders = byDate.get(iso) || [];
+
+    // Only a few fit; the rest are summarised so the row height stays even.
+    for (const reminder of dayReminders.slice(0, 3)) {
+      chips.append(buildChip(reminder, iso, today));
+    }
+    cell.append(chips);
+
+    if (dayReminders.length > 3) {
+      const more = document.createElement("span");
+      more.className = "cal-more";
+      more.textContent = `+${dayReminders.length - 3} more`;
+      cell.append(more);
+    }
+
+    calGrid.append(cell);
+  }
+
+  // Reminders with no date can't sit in the grid, so they get their own list.
+  calUndated.classList.toggle("hidden", undated.length === 0);
+  calUndatedList.replaceChildren();
+  for (const reminder of undated) {
+    calUndatedList.append(buildReminderItem(reminder));
+  }
+}
+
+function buildChip(reminder, iso, today) {
+  const chip = document.createElement("button");
+  chip.type = "button";
+  chip.className = "chip";
+  if (reminder.is_complete) chip.classList.add("complete");
+  else if (iso < today) chip.classList.add("overdue");
+
+  chip.textContent = reminder.text;
+  chip.title = reminder.is_complete
+    ? `${reminder.text} — click to mark as not done`
+    : `${reminder.text} — click to complete`;
+  chip.addEventListener("click", () => {
+    toggleComplete(reminder.id, !reminder.is_complete);
+  });
+  return chip;
 }
 
 // Highlight the active tab and show how many reminders sit behind each one.
