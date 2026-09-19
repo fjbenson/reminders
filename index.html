@@ -61,6 +61,19 @@
 
       <p id="app-message" class="message"></p>
 
+      <!-- role="tablist" tells screen readers these behave as tabs, not links. -->
+      <div class="tabs" role="tablist" aria-label="Filter reminders">
+        <button type="button" class="tab" role="tab" data-filter="todo" aria-selected="true">
+          To do <span class="tab-count" id="count-todo"></span>
+        </button>
+        <button type="button" class="tab" role="tab" data-filter="done" aria-selected="false">
+          Done <span class="tab-count" id="count-done"></span>
+        </button>
+        <button type="button" class="tab" role="tab" data-filter="all" aria-selected="false">
+          All <span class="tab-count" id="count-all"></span>
+        </button>
+      </div>
+
       <ul id="reminder-list" class="list"></ul>
 
       <div id="empty-state" class="empty hidden">

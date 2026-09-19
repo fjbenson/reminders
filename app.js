@@ -51,6 +51,9 @@ const emptyState = document.getElementById("empty-state");
 const appMessage = document.getElementById("app-message");
 const headlineCount = document.getElementById("headline-count");
 const headlineSub = document.getElementById("headline-sub");
+const emptyTitle = emptyState.querySelector(".empty-title");
+const emptySub = emptyState.querySelector(".empty-sub");
+const tabs = Array.from(document.querySelectorAll(".tab"));
 
 // Show a message under a form. `isError` picks the colour.
 function showMessage(element, text, isError = true) {
@@ -123,6 +126,8 @@ function showAuthView() {
   authView.classList.remove("hidden");
   reminderList.replaceChildren();
   emptyState.classList.add("hidden");
+  allReminders = [];
+  activeFilter = "todo";
   setAuthMode("login");
 }
 
@@ -212,7 +217,9 @@ async function loadReminders() {
     return;
   }
 
-  renderReminders(data);
+  // Keep the full set in memory so switching tabs is instant — no refetch.
+  allReminders = data;
+  renderReminders();
 }
 
 reminderForm.addEventListener("submit", async (event) => {
@@ -261,16 +268,68 @@ async function deleteReminder(id) {
 // 5. Rendering
 // ---------------------------------------------------------------------------
 
-function renderReminders(reminders) {
-  reminderList.replaceChildren();
-  emptyState.classList.toggle("hidden", reminders.length > 0);
-  reminderList.classList.toggle("hidden", reminders.length === 0);
+// Every reminder the user has, and which tab is showing. The tabs filter this
+// list in the browser rather than re-querying, so switching is instant.
+let allReminders = [];
+let activeFilter = "todo"; // "todo" | "done" | "all"
 
-  for (const reminder of reminders) {
+const FILTERS = {
+  todo: {
+    matches: (r) => !r.is_complete,
+    emptyTitle: "Nothing to do",
+    emptySub: "Add a reminder above, or check the Done tab.",
+  },
+  done: {
+    matches: (r) => r.is_complete,
+    emptyTitle: "Nothing completed yet",
+    emptySub: "Tick something off and it will appear here.",
+  },
+  all: {
+    matches: () => true,
+    emptyTitle: "Nothing here yet",
+    emptySub: "Add your first reminder above.",
+  },
+};
+
+for (const tab of tabs) {
+  tab.addEventListener("click", () => {
+    activeFilter = tab.dataset.filter;
+    renderReminders();
+  });
+}
+
+function renderReminders() {
+  const filter = FILTERS[activeFilter];
+  const visible = allReminders.filter(filter.matches);
+
+  reminderList.replaceChildren();
+  for (const reminder of visible) {
     reminderList.append(buildReminderItem(reminder));
   }
 
-  updateHeadline(reminders);
+  const isEmpty = visible.length === 0;
+  reminderList.classList.toggle("hidden", isEmpty);
+  emptyState.classList.toggle("hidden", !isEmpty);
+  emptyTitle.textContent = filter.emptyTitle;
+  emptySub.textContent = filter.emptySub;
+
+  updateTabs();
+  updateHeadline(allReminders);
+}
+
+// Highlight the active tab and show how many reminders sit behind each one.
+function updateTabs() {
+  const counts = {
+    todo: allReminders.filter(FILTERS.todo.matches).length,
+    done: allReminders.filter(FILTERS.done.matches).length,
+    all: allReminders.length,
+  };
+
+  for (const tab of tabs) {
+    const name = tab.dataset.filter;
+    tab.setAttribute("aria-selected", String(name === activeFilter));
+    tab.querySelector(".tab-count").textContent = counts[name];
+  }
 }
 
 // A one-line summary above the list: how many are left, and how many of those
