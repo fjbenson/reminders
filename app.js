@@ -36,7 +36,9 @@ const appView = document.getElementById("app-view");
 const authForm = document.getElementById("auth-form");
 const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
-const signupBtn = document.getElementById("signup-btn");
+const submitBtn = document.getElementById("submit-btn");
+const switchBtn = document.getElementById("switch-btn");
+const switchPrompt = document.getElementById("switch-prompt");
 const logoutBtn = document.getElementById("logout-btn");
 const userEmail = document.getElementById("user-email");
 const authMessage = document.getElementById("auth-message");
@@ -98,47 +100,66 @@ function showAuthView() {
   authView.classList.remove("hidden");
   reminderList.replaceChildren();
   emptyState.classList.add("hidden");
+  setAuthMode("login");
 }
 
-// Log in — the form's normal submit action.
+// The auth form does double duty. `authMode` decides which, and the labels
+// and behaviour follow from it.
+//
+// We can't detect whether an email already has an account — Supabase won't
+// tell the browser, so that nobody can probe for who is registered. So the
+// user picks, rather than the app guessing.
+let authMode = "login"; // or "signup"
+
+function setAuthMode(mode) {
+  authMode = mode;
+  clearMessages();
+
+  const isLogin = mode === "login";
+  submitBtn.textContent = isLogin ? "Log in" : "Sign up";
+  switchPrompt.textContent = isLogin ? "Need an account?" : "Already have an account?";
+  switchBtn.textContent = isLogin ? "Sign up" : "Log in";
+
+  // Tells the browser's password manager whether to offer a saved password
+  // or generate a new one.
+  passwordInput.autocomplete = isLogin ? "current-password" : "new-password";
+}
+
+switchBtn.addEventListener("click", () => {
+  setAuthMode(authMode === "login" ? "signup" : "login");
+});
+
 authForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   clearMessages();
 
-  const { error } = await db.auth.signInWithPassword({
+  const credentials = {
     email: emailInput.value,
     password: passwordInput.value,
-  });
+  };
 
-  if (error) {
-    showMessage(authMessage, error.message);
-    return;
-  }
-  // No redraw needed: onAuthStateChange above handles the view switch.
-  authForm.reset();
-});
-
-// Sign up — same fields, different button.
-signupBtn.addEventListener("click", async () => {
-  clearMessages();
-
-  if (!authForm.reportValidity()) return;
-
-  const { data, error } = await db.auth.signUp({
-    email: emailInput.value,
-    password: passwordInput.value,
-  });
-
-  if (error) {
-    showMessage(authMessage, error.message);
-    return;
+  if (authMode === "login") {
+    const { error } = await db.auth.signInWithPassword(credentials);
+    if (error) {
+      showMessage(authMessage, error.message);
+      return;
+    }
+    // No redraw needed: onAuthStateChange above handles the view switch.
+  } else {
+    const { data, error } = await db.auth.signUp(credentials);
+    if (error) {
+      showMessage(authMessage, error.message);
+      return;
+    }
+    // With email confirmation switched on, signUp returns no session and the
+    // user has to click the link in their inbox first.
+    if (!data.session) {
+      // Order matters: setAuthMode clears messages, so switch mode first.
+      setAuthMode("login");
+      showMessage(authMessage, "Check your email to confirm your account, then log in.", false);
+    }
   }
 
-  // If email confirmation is on (the Supabase default), signUp returns no
-  // session and the user must click the link in their inbox first.
-  if (!data.session) {
-    showMessage(authMessage, "Check your email to confirm your account, then log in.", false);
-  }
   authForm.reset();
 });
 
