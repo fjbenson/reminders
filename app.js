@@ -11,19 +11,21 @@
 // 1. Supabase client
 // ---------------------------------------------------------------------------
 
-// Replace these two values with your own project's, from the Supabase
-// dashboard: Project Settings -> API.
+// These come from the Supabase dashboard: Project Settings -> API.
 //
 // Yes, this key ends up publicly visible in the browser. That is expected:
-// the "anon public" key is designed to be shipped to clients. It only grants
-// the permissions your Row Level Security policies allow, and our policies in
-// schema.sql restrict every row to its owner. See the README for more.
-const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
+// the publishable key (formerly called "anon public") is designed to be
+// shipped to clients. It only grants what your Row Level Security policies
+// allow, and the policies in schema.sql restrict every row to its owner.
+//
+// The *secret* key on that same dashboard page bypasses RLS entirely and must
+// never appear here. See the README for more.
+const SUPABASE_URL = "https://tvfzjrczhaceqswdfpvg.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_DRC5TLMfAffIi2e4NT27mg__AaEJRQX";
 
 // The CDN script in index.html gives us a global called `supabase`. We call
 // its createClient() and keep the result in `db`, so the two names don't clash.
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 // ---------------------------------------------------------------------------
 // 2. Elements and helpers
