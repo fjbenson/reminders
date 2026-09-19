@@ -49,6 +49,8 @@ const reminderDue = document.getElementById("reminder-due");
 const reminderList = document.getElementById("reminder-list");
 const emptyState = document.getElementById("empty-state");
 const appMessage = document.getElementById("app-message");
+const headlineCount = document.getElementById("headline-count");
+const headlineSub = document.getElementById("headline-sub");
 
 // Show a message under a form. `isError` picks the colour.
 function showMessage(element, text, isError = true) {
@@ -61,14 +63,35 @@ function clearMessages() {
   showMessage(appMessage, "");
 }
 
-// Format "2026-03-04" as "4 Mar 2026". Dates come back from Postgres as plain
-// YYYY-MM-DD strings, so we split them rather than using new Date(), which
-// would interpret them as UTC midnight and can shift the day in some zones.
+// Today as a plain YYYY-MM-DD string, in the browser's own timezone. Using
+// local parts (not toISOString, which is UTC) means "today" means today here.
+function todayIso() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+// Format "2026-03-04" as "4 Mar", or "4 Mar 2026" if it isn't this year.
+// Dates come back from Postgres as plain YYYY-MM-DD strings, so we split them
+// rather than using new Date(), which reads them as UTC midnight and can shift
+// the day in some timezones.
 function formatDueDate(isoDate) {
   const [year, month, day] = isoDate.split("-").map(Number);
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${day} ${monthNames[month - 1]} ${year}`;
+  const thisYear = Number(todayIso().slice(0, 4));
+  const suffix = year === thisYear ? "" : ` ${year}`;
+  return `${day} ${monthNames[month - 1]}${suffix}`;
+}
+
+// "overdue", "today", or "" — drives the colour of the due-date pill.
+// Comparing YYYY-MM-DD strings works because the format sorts like the date.
+function dueState(isoDate) {
+  const today = todayIso();
+  if (isoDate < today) return "overdue";
+  if (isoDate === today) return "today";
+  return "";
 }
 
 // ---------------------------------------------------------------------------
@@ -246,6 +269,30 @@ function renderReminders(reminders) {
   for (const reminder of reminders) {
     reminderList.append(buildReminderItem(reminder));
   }
+
+  updateHeadline(reminders);
+}
+
+// A one-line summary above the list: how many are left, and how many of those
+// are already late.
+function updateHeadline(reminders) {
+  const open = reminders.filter((r) => !r.is_complete);
+  const overdue = open.filter((r) => r.due_date && dueState(r.due_date) === "overdue");
+
+  if (reminders.length === 0) {
+    headlineCount.textContent = "Your reminders";
+    headlineSub.textContent = "";
+    return;
+  }
+
+  headlineCount.textContent =
+    open.length === 0 ? "All done" : `${open.length} to do`;
+
+  const parts = [];
+  if (overdue.length > 0) parts.push(`${overdue.length} overdue`);
+  const done = reminders.length - open.length;
+  if (done > 0) parts.push(`${done} complete`);
+  headlineSub.textContent = parts.join(" · ");
 }
 
 // Build one <li>. We create elements and set .textContent rather than writing
@@ -270,15 +317,17 @@ function buildReminderItem(reminder) {
 
   if (reminder.due_date) {
     const due = document.createElement("span");
-    due.className = "due";
+    // e.g. "due today" or "due overdue" — the second class sets the colour.
+    due.className = `due ${dueState(reminder.due_date)}`.trim();
     due.textContent = formatDueDate(reminder.due_date);
     item.append(due);
   }
 
   const remove = document.createElement("button");
   remove.type = "button";
-  remove.className = "link";
-  remove.textContent = "Delete";
+  remove.className = "btn-icon";
+  remove.textContent = "\u00d7"; // multiplication sign, a tidier × than "x"
+  remove.setAttribute("aria-label", `Delete "${reminder.text}"`);
   remove.addEventListener("click", () => deleteReminder(reminder.id));
   item.append(remove);
 
